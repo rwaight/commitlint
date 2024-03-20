@@ -19,26 +19,33 @@ jobs:
   commitlint:
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           fetch-depth: 0
-      - name: Install required dependencies
+
+      - name: Setup node
+        uses: actions/setup-node@v4
+
+      - name: Install commitlint
         run: |
-          apt update
-          apt install -y sudo
-          sudo apt install -y git curl
-          curl -sL https://deb.nodesource.com/setup_14.x | sudo -E bash -
-          sudo DEBIAN_FRONTEND=noninteractive apt install -y nodejs
+          npm install conventional-changelog-conventionalcommits
+          npm install commitlint@latest
+          npm install --save-dev @commitlint/{cli,config-conventional}
+          echo "module.exports = { extends: ['@commitlint/config-conventional'] };" > commitlint.config.js
+
+      - name: Install husky
+        run: |
+          npm install husky --save-dev
+          npx husky init
+          echo "adding commit message linting to commit-msg hook"
+          echo "npx --no -- commitlint --edit \$1" > .husky/commit-msg
+
       - name: Print versions
         run: |
           git --version
           node --version
           npm --version
           npx commitlint --version
-      - name: Install commitlint
-        run: |
-          npm install conventional-changelog-conventionalcommits
-          npm install commitlint@latest
 
       - name: Validate current commit (last commit) with commitlint
         if: github.event_name == 'push'
